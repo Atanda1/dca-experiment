@@ -7,7 +7,9 @@ import { Dashboard } from './components/Dashboard';
 import { NewInvestment } from './components/NewInvestment';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
+
   const { session } = useAuth();
+  
   return session ? <>{children}</> : <Navigate to="/login" />;
 }
 
@@ -33,7 +35,7 @@ function App() {
                 <NewInvestment />
               </PrivateRoute>
             } />
-            <Route path="/" element={<Navigate to="/login" />} />
+            <Route path="/" element={<Navigate to="/dashboard" />} />
           </Routes>
         </div>
       </AuthProvider>
