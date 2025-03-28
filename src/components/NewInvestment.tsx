@@ -1,24 +1,23 @@
-
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
-import { ArrowLeft, Loader, Plus, X } from 'lucide-react';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../contexts/AuthContext";
+import { ArrowLeft, Loader, Plus, X } from "lucide-react";
 
 const INVESTMENT_CATEGORIES = [
-  'Stocks',
-  'Bonds',
-  'Real Estate',
-  'Cryptocurrency',
-  'Mutual Funds',
-  'ETFs',
-  'Other',
+  "Stocks",
+  "Bonds",
+  "Real Estate",
+  "Cryptocurrency",
+  "Mutual Funds",
+  "ETFs",
+  "Other",
 ];
 
 interface CategoryAllocation {
   category: string;
   amount: string;
+  notes?: string;
 }
 
 export function NewInvestment() {
@@ -27,11 +26,10 @@ export function NewInvestment() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [allocations, setAllocations] = useState<CategoryAllocation[]>([
-    { category: '', amount: '' }
+    { category: "", amount: "", notes: "" },
   ]);
   const [formData, setFormData] = useState({
-    investmentDate: new Date().toISOString().split('T')[0],
-    notes: '',
+    investmentDate: new Date().toISOString().split("T")[0],
   });
 
   // Calculate total investment amount
@@ -40,37 +38,45 @@ export function NewInvestment() {
   }, 0);
 
   const handleAddAllocation = () => {
-    setAllocations([...allocations, { category: '', amount: '' }]);
+    setAllocations([...allocations, { category: "", amount: "" }]);
   };
 
   const handleRemoveAllocation = (index: number) => {
     if (allocations.length === 1) {
-      setAllocations([{ category: '', amount: '' }]);
+      setAllocations([{ category: "", amount: "" }]);
     } else {
       setAllocations(allocations.filter((_, i) => i !== index));
     }
   };
 
-  const handleAllocationChange = (index: number, field: keyof CategoryAllocation, value: string) => {
+  const handleAllocationChange = (
+    index: number,
+    field: keyof CategoryAllocation,
+    value: string
+  ) => {
     const updatedAllocations = [...allocations];
-    updatedAllocations[index] = { ...updatedAllocations[index], [field]: value };
+    updatedAllocations[index] = {
+      ...updatedAllocations[index],
+      [field]: value,
+    };
     setAllocations(updatedAllocations);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      setError('You must be logged in to add investments');
+      setError("You must be logged in to add investments");
       return;
     }
 
     // Validate allocations
-    const invalidAllocations = allocations.some(alloc =>
-      !alloc.category || !alloc.amount || parseFloat(alloc.amount) <= 0
+    const invalidAllocations = allocations.some(
+      (alloc) =>
+        !alloc.category || !alloc.amount || parseFloat(alloc.amount) <= 0
     );
 
     if (invalidAllocations) {
-      setError('All categories must be selected and have a valid amount');
+      setError("All categories must be selected and have a valid amount");
       return;
     }
 
@@ -78,30 +84,32 @@ export function NewInvestment() {
     setError(null);
     try {
       // Insert each allocation as a separate investment entry
-      const investmentPromises = allocations.map(allocation => {
-        return supabase
-          .from('investments')
-          .insert([
-            {
-              user_id: user.id,
-              amount: parseFloat(allocation.amount),
-              category: allocation.category,
-              investment_date: formData.investmentDate,
-              notes: formData.notes,
-            },
-          ]);
+      const investmentPromises = allocations.map((allocation) => {
+        return supabase.from("investments").insert([
+          {
+            user_id: user.id,
+            amount: parseFloat(allocation.amount),
+            category: allocation.category,
+            investment_date: formData.investmentDate,
+            notes: allocation.notes || "",
+          },
+        ]);
       });
 
       const results = await Promise.all(investmentPromises);
 
       // Check if any of the insertions had an error
-      const insertErrors = results.filter(result => result.error);
+      const insertErrors = results.filter((result) => result.error);
       if (insertErrors.length > 0) throw insertErrors[0].error;
 
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (err) {
-      console.error('Error adding investments:', err);
-      setError(err instanceof Error ? err.message : 'Failed to add investments. Please try again.');
+      console.error("Error adding investments:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to add investments. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -113,12 +121,15 @@ export function NewInvestment() {
         <div className="md:grid md:grid-cols-3 md:gap-6">
           <div className="md:col-span-1">
             <div className="px-4 sm:px-0">
-              <h3 className="text-lg font-medium leading-6 text-gray-900">New Investment</h3>
+              <h3 className="text-lg font-medium leading-6 text-gray-900">
+                New Investment
+              </h3>
               <p className="mt-1 text-sm text-gray-600">
-                Record a new investment across multiple categories to track your portfolio growth.
+                Record a new investment across multiple categories to track your
+                portfolio growth.
               </p>
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate("/dashboard")}
                 className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />
@@ -139,16 +150,24 @@ export function NewInvestment() {
 
                   <div>
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-md font-medium text-gray-700">Category Allocations</h3>
+                      <h3 className="text-md font-medium text-gray-700">
+                        Category Allocations
+                      </h3>
                       <div className="text-sm text-gray-500">
                         Total: ${totalAmount.toFixed(2)}
                       </div>
                     </div>
 
                     {allocations.map((allocation, index) => (
-                      <div key={index} className="flex flex-wrap items-center gap-4 mb-4 p-4 border border-gray-200 rounded-md">
+                      <div
+                        key={index}
+                        className="flex flex-wrap items-center gap-4 mb-4 p-4 border border-gray-200 rounded-md"
+                      >
                         <div className="w-full sm:w-2/5">
-                          <label htmlFor={`category-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                          <label
+                            htmlFor={`category-${index}`}
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                          >
                             Category
                           </label>
                           <select
@@ -156,7 +175,13 @@ export function NewInvestment() {
                             required
                             className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                             value={allocation.category}
-                            onChange={(e) => handleAllocationChange(index, 'category', e.target.value)}
+                            onChange={(e) =>
+                              handleAllocationChange(
+                                index,
+                                "category",
+                                e.target.value
+                              )
+                            }
                           >
                             <option value="">Select a category</option>
                             {INVESTMENT_CATEGORIES.map((category) => (
@@ -168,12 +193,17 @@ export function NewInvestment() {
                         </div>
 
                         <div className="w-full sm:w-2/5">
-                          <label htmlFor={`amount-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                          <label
+                            htmlFor={`amount-${index}`}
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                          >
                             Amount
                           </label>
                           <div className="relative rounded-md shadow-sm">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                              <span className="text-gray-500 sm:text-sm">$</span>
+                              <span className="text-gray-500 sm:text-sm">
+                                $
+                              </span>
                             </div>
                             <input
                               type="number"
@@ -184,7 +214,13 @@ export function NewInvestment() {
                               className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
                               placeholder="0.00"
                               value={allocation.amount}
-                              onChange={(e) => handleAllocationChange(index, 'amount', e.target.value)}
+                              onChange={(e) =>
+                                handleAllocationChange(
+                                  index,
+                                  "amount",
+                                  e.target.value
+                                )
+                              }
                             />
                           </div>
                         </div>
@@ -198,6 +234,30 @@ export function NewInvestment() {
                             <X className="h-4 w-4" />
                             <span className="sr-only">Remove</span>
                           </button>
+                        </div>
+                        <div className="w-full ">
+                          <label
+                            htmlFor="notes"
+                            className="block text-sm font-medium text-gray-700"
+                          >
+                            Notes
+                          </label>
+                          <div className="mt-1 w-full">
+                            <textarea
+                              id="notes"
+                              rows={3}
+                              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-2"
+                              placeholder="Add any additional notes about this investment"
+                              value={allocation.notes}
+                              onChange={(e) =>
+                                handleAllocationChange(
+                                  index,
+                                  "notes",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -213,7 +273,10 @@ export function NewInvestment() {
                   </div>
 
                   <div>
-                    <label htmlFor="investmentDate" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="investmentDate"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       Investment Date
                     </label>
                     <input
@@ -222,25 +285,16 @@ export function NewInvestment() {
                       required
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       value={formData.investmentDate}
-                      onChange={(e) => setFormData({ ...formData, investmentDate: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          investmentDate: e.target.value,
+                        })
+                      }
                     />
                   </div>
 
-                  <div>
-                    <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-                      Notes
-                    </label>
-                    <div className="mt-1">
-                      <textarea
-                        id="notes"
-                        rows={3}
-                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mt-1 block w-full sm:text-sm border border-gray-300 rounded-md"
-                        placeholder="Add any additional notes about this investment"
-                        value={formData.notes}
-                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      />
-                    </div>
-                  </div>
+                  <div></div>
                 </div>
 
                 <div className="px-4 py-3 bg-gray-50 text-right sm:px-6">
@@ -249,7 +303,9 @@ export function NewInvestment() {
                     disabled={loading}
                     className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
-                    {loading && <Loader className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />}
+                    {loading && (
+                      <Loader className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                    )}
                     Save Investment
                   </button>
                 </div>
