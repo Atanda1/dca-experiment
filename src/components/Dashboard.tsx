@@ -103,8 +103,8 @@ export function Dashboard() {
         <div className="flex flex-col">
           <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-              <div className="shadow border-b border-gray-200 sm:rounded-lg h-[80vh] overflow-y-auto">
-                <table className="min-w-full divide-y divide-gray-200 h-[80vh]">
+              <div className="shadow border-b border-gray-200 sm:rounded-lg max-h-[80vh] overflow-y-auto">
+                <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50 h-[10%] sticky top-0">
                     <tr>
                       <th
@@ -177,7 +177,7 @@ export function Dashboard() {
                     )}
                   </tbody>
                   {investments.length !== 0 && (
-                    <tfoot className="bg-gray-50">
+                    <tfoot className="bg-gray-50 ">
                       <tr className="sticky bottom-0 bg-gray-50">
                         <th
                           scope="col"
