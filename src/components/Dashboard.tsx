@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
-import { PlusCircle, LogOut, Loader } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../contexts/AuthContext";
+import { PlusCircle, LogOut, Loader } from "lucide-react";
 
 interface Investment {
   id: string;
@@ -26,22 +26,33 @@ export function Dashboard() {
   async function fetchInvestments() {
     try {
       const { data, error } = await supabase
-        .from('investments')
-        .select('*')
-        .order('investment_date', { ascending: false });
+        .from("investments")
+        .select("*")
+        .order("investment_date", { ascending: false });
 
       if (error) throw error;
       setInvestments(data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
   }
 
+  async function deleteInvestment(id: string) {
+    const { error } = await supabase.from("investments").delete().eq("id", id); // Match row with given ID
+
+    if (error) {
+      setError(error instanceof Error ? error.message : "An error occurred");
+    } else {
+      setInvestments((prev) => prev.filter((item) => item.id !== id)); // Remove the deleted item from the state
+      console.log("Item deleted successfully");
+    }
+  }
+
   const handleSignOut = async () => {
     await signOut();
-    navigate('/login');
+    navigate("/login");
   };
 
   if (loading) {
@@ -58,7 +69,9 @@ export function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex-shrink-0 flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">Investment Tracker</h1>
+              <h1 className="text-xl font-bold text-gray-900">
+                Investment Tracker
+              </h1>
             </div>
             <div className="flex items-center">
               <Link
@@ -94,17 +107,35 @@ export function Dashboard() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Date
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Category
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Amount
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Notes
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider "
+                      >
+                        Actions
                       </th>
                     </tr>
                   </thead>
@@ -112,7 +143,9 @@ export function Dashboard() {
                     {investments.map((investment) => (
                       <tr key={investment.id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(investment.investment_date).toLocaleDateString()}
+                          {new Date(
+                            investment.investment_date
+                          ).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {investment.category}
@@ -123,16 +156,59 @@ export function Dashboard() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {investment.notes}
                         </td>
+                        <td
+                          onClick={() => deleteInvestment(investment.id)}
+                          className="px-6 py-4 whitespace-nowrap text-sm text-red-500"
+                        >
+                          <button>Delete</button>
+                        </td>
                       </tr>
                     ))}
                     {investments.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
-                          No investments recorded yet. Click "New Investment" to add one.
+                        <td
+                          colSpan={4}
+                          className="px-6 py-4 text-center text-sm text-gray-500"
+                        >
+                          No investments recorded yet. Click "New Investment" to
+                          add one.
                         </td>
                       </tr>
                     )}
                   </tbody>
+                  {investments.length !== 0 && (
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          TOTAL
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          {`${
+                            investments[investments.length - 1]?.investment_date
+                          } - ${investments[0]?.investment_date}`}
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          $
+                          {investments
+                            .reduce((sum, item) => sum + item.amount, 0)
+                            .toLocaleString()}
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        ></th>
+                      </tr>
+                    </thead>
+                  )}
                 </table>
               </div>
             </div>
